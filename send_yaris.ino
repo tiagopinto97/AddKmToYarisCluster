@@ -34,7 +34,6 @@ mcp2518fd CAN(SPI_CS_PIN); // Set CS pin
 #include "mcp2515_can.h"
 mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
 #endif
-#include "can_messages.h"
 
 void setup() {
     while (CAN_OK != CAN.begin(CAN_500KBPS)) {}
@@ -72,6 +71,13 @@ void loop() {
        
        sendCANMessage(data1);
        sendCANMessage(data2);
+
+
+       //byte rpmData[8] = { calculateRpm(rpm),0x28,0x00,0x19,0x00,0x00,0x92,0xA6  };
+       //CAN.sendMsgBuf(0x2C4, 0, 8, rpmData);
+
+
+       
        count+=1;
     }
     delay(150);
