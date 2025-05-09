@@ -1,4 +1,4 @@
-Project created to save the simple sketch made to add the missing mileage to my speedometer after I bought a used replacement that had about less 700000 km.
+Project created to save the simple sketch made to add the missing mileage to my speedometer after I bought a used replacement that had about less 70000 km.
 
 
 I used an Arduino leonardo + a CAN-BUS_Shield_V2.0 and used the base examples from the Seeed_Arduino_CAN library to read the car current data and to send the data.
