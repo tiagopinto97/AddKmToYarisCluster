@@ -1,0 +1,105 @@
+// demo: CAN-BUS Shield, send data
+// loovee@seeed.cc
+
+#include <SPI.h>
+
+#define CAN_2515
+// #define CAN_2518FD
+
+// Set SPI CS Pin according to your hardware
+
+#if defined(SEEED_WIO_TERMINAL) && defined(CAN_2518FD)
+// For Wio Terminal w/ MCP2518FD RPi Hat：
+// Channel 0 SPI_CS Pin: BCM 8
+// Channel 1 SPI_CS Pin: BCM 7
+// Interupt Pin: BCM25
+const int SPI_CS_PIN  = BCM8;
+const int CAN_INT_PIN = BCM25;
+#else
+
+// For Arduino MCP2515 Hat:
+// the cs pin of the version after v1.1 is default to D9
+// v0.9b and v1.0 is default D10
+const int SPI_CS_PIN = 9;
+const int CAN_INT_PIN = 2;
+#endif
+
+
+#ifdef CAN_2518FD
+#include "mcp2518fd_can.h"
+mcp2518fd CAN(SPI_CS_PIN); // Set CS pin
+#endif
+
+#ifdef CAN_2515
+#include "mcp2515_can.h"
+mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
+#endif
+
+void setup() {
+    SERIAL_PORT_MONITOR.begin(115200);
+      Serial.println("Hello");
+
+    while (CAN_OK != CAN.begin(CAN_500KBPS)) {}
+    Serial.println("Hello2");
+}
+
+
+int id = 0;
+const int x = 1;           // Number of IDs to send per batch - 50 to 10 for quick look, 5 to 1 for debugging ( finding ids)
+const int minID = 708;     // 0 for all, higher for targeting ids
+const int maxID = 708;     // 2048 | 4095 for all, lower for targeting ids for testing
+const int testDelay = 100; // 100 seems ok, 20 is really fast but debuggable maybe, 1000 for finding the right id but slow (and might not be detected if bellow 100)
+void loop() {
+ 
+    
+
+    sendCANMessage(minID + id, x, maxID); // Send x IDs at once
+
+    id += x; // Advance to next batch
+
+    if (minID + id > maxID) {
+        id = 0; // Reset if exceeded (or stop if you want)
+    }
+
+}
+
+void sendCANMessage(int startID, int count, int maxID) {
+    const int len = 4;
+
+    const byte data[len][8] = {
+      /*
+        {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00},
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF},
+        {0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00},
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00},*/
+        {0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x80, 0x80},
+        {0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF},
+        {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80},
+        {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+    };
+
+    for (int j = 0; j < len; j++) {
+        for (int i = 0; i < count; i++) {
+            int currentID = startID + i;
+    
+            if (currentID > maxID) break; // Prevent overflow
+
+        
+            byte sendResult = CAN.sendMsgBuf(currentID, 0, 8, data[j]);
+            Serial.println("Sent ID: " + String(currentID) + " DataSet: " + String(j));
+        }
+        delay(testDelay);
+    }
+}
+
+
